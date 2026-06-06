@@ -69,6 +69,7 @@ func main() {
 		Health:  database.NewHealth(db),
 		QRIS:    qrisUC,
 		Routing: routingUC,
+		AuthKey: cfg.AuthenticationKey,
 	})
 
 	addr := ":" + cfg.HTTPPort

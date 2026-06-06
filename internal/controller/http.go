@@ -19,6 +19,7 @@ type Deps struct {
 	QRIS    usecase.QRIS
 	Retry   usecase.CommunicationRetry
 	Routing usecase.GatewayRouting
+	AuthKey string
 }
 
 type HTTPServer struct {
@@ -27,6 +28,7 @@ type HTTPServer struct {
 	retry   usecase.CommunicationRetry
 	routing usecase.GatewayRouting
 	mux     chi.Router
+	authKey string
 }
 
 func NewHTTPServer(d Deps) HTTPServer {
@@ -35,6 +37,7 @@ func NewHTTPServer(d Deps) HTTPServer {
 		qris:    d.QRIS,
 		retry:   d.Retry,
 		routing: d.Routing,
+		authKey: d.AuthKey,
 	}
 
 	r := chi.NewRouter()

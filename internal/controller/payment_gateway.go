@@ -9,11 +9,13 @@ import (
 )
 
 func (h HTTPServer) registerAdminRoutes(r *chi.Mux) {
-	r.Route("/v1/admin", func(r chi.Router) {
-		r.Get("/payment-gateways", Handle(h.getAdminPaymentGateways))
-		r.Put("/payment-gateways/priority", Handle(h.putAdminPaymentGatewayPriority))
-		r.Post("/payment-gateways/failover", Handle(h.postAdminPaymentGatewayFailover))
-		r.Post("/payment-communications/poll", Handle(h.postAdminPaymentCommunicationsPoll))
+	r.Route("/v1/admin", func(adminRouter chi.Router) {
+		adminRouter.Use(Authenticate(h.authKey))
+
+		adminRouter.Get("/payment-gateways", Handle(h.getAdminPaymentGateways))
+		adminRouter.Put("/payment-gateways/priority", Handle(h.putAdminPaymentGatewayPriority))
+		adminRouter.Post("/payment-gateways/failover", Handle(h.postAdminPaymentGatewayFailover))
+		adminRouter.Post("/payment-communications/poll", Handle(h.postAdminPaymentCommunicationsPoll))
 	})
 }
 

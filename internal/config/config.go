@@ -20,6 +20,8 @@ type Config struct {
 	PaymentGateway            string                          `koanf:"payment_gateway"`
 	PaymentGatewayPriority    []string                        `koanf:"payment_gateway_priority"`
 	PaymentCommunicationRetry PaymentCommunicationRetryConfig `koanf:"payment_communication_retry"`
+
+	AuthenticationKey string `koanf:"authentication_key"`
 }
 
 // PaymentCommunicationRetryConfig drives the background poller that re-calls the gateway for stuck communications.
