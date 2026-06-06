@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 
-	"payment-service/internal/config"
-	"payment-service/internal/controller"
-	"payment-service/internal/database"
-	gwfactory "payment-service/internal/gateway"
-	"payment-service/internal/repository"
-	"payment-service/internal/usecase"
-	"payment-service/internal/worker"
+	"vending-qris-service/internal/config"
+	"vending-qris-service/internal/controller"
+	"vending-qris-service/internal/database"
+	gwfactory "vending-qris-service/internal/gateway"
+	"vending-qris-service/internal/repository"
+	"vending-qris-service/internal/usecase"
+	"vending-qris-service/internal/worker"
 )
 
 func main() {

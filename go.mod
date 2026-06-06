@@ -1,4 +1,4 @@
-module payment-service
+module vending-qris-service
 
 go 1.24.0
 

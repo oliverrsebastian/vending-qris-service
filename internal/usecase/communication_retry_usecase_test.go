@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"payment-service/internal/domain"
-	"payment-service/internal/usecase"
+	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/usecase"
 )
 
 type retryCommRepo struct {

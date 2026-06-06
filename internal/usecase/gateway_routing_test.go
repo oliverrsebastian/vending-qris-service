@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"payment-service/internal/usecase"
+	"vending-qris-service/internal/usecase"
 )
 
 type mockPriorityRepo struct {

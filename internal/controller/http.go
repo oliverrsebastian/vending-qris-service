@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"payment-service/internal/domain"
-	"payment-service/internal/usecase"
+	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/usecase"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -60,7 +60,7 @@ func (h HTTPServer) healthHandler(w http.ResponseWriter, r *http.Request) {
 	dbOK := h.health != nil && h.health.Ping(r.Context()) == nil
 	body := map[string]any{
 		"status":  "ok",
-		"service": "payment-service",
+		"service": "vending-qris-service",
 		"db":      dbOK,
 	}
 	if !dbOK {

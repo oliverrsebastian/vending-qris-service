@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"payment-service/internal/domain"
-	"payment-service/internal/usecase"
+	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/usecase"
 )
 
 type mockResolver struct {
@@ -49,7 +49,7 @@ type stubGateway struct {
 	err  error
 }
 
-func (s stubGateway) Name() string { return s.name }
+func (s stubGateway) Name() string               { return s.name }
 func (s stubGateway) Ping(context.Context) error { return nil }
 func (s stubGateway) GenerateDynamicQRIS(ctx context.Context, req domain.DynamicQRISRequest) (*domain.DynamicQRISResponse, error) {
 	_ = ctx

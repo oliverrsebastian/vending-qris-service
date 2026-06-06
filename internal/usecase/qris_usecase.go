@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"payment-service/internal/domain"
+	"vending-qris-service/internal/domain"
 )
 
 type qrisUsecase struct {

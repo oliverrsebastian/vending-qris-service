@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"payment-service/internal/controller"
-	"payment-service/internal/domain"
-	"payment-service/internal/usecase"
+	"vending-qris-service/internal/controller"
+	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/usecase"
 )
 
 type healthOK struct{}
@@ -54,8 +54,8 @@ func (m *mockPriorityRepo) RotateOnce(context.Context) error { return nil }
 
 type stubGW struct{}
 
-func (stubGW) Name() string                                                  { return "stub" }
-func (stubGW) Ping(context.Context) error                                    { return nil }
+func (stubGW) Name() string               { return "stub" }
+func (stubGW) Ping(context.Context) error { return nil }
 func (stubGW) GenerateDynamicQRIS(_ context.Context, req domain.DynamicQRISRequest) (*domain.DynamicQRISResponse, error) {
 	return &domain.DynamicQRISResponse{QRString: "qr", ReferenceID: req.ReferenceID, StatusCode: "200"}, nil
 }

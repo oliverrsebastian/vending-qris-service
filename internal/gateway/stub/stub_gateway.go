@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"payment-service/internal/domain"
+	"vending-qris-service/internal/domain"
 )
 
 // Gateway is a placeholder implementation: swap for a real provider that talks to QRIS / acquirer APIs.

@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 
-	"payment-service/internal/domain"
+	"vending-qris-service/internal/domain"
 )
 
 type gatewayRoutingUsecase struct {

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"payment-service/internal/domain"
-	"payment-service/internal/usecase"
-	"payment-service/internal/worker"
+	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/usecase"
+	"vending-qris-service/internal/worker"
 )
 
 type noopCommRepo struct{}
@@ -22,7 +22,7 @@ func (noopCommRepo) UpdateAfterStatusPoll(context.Context, int64, []byte, string
 
 type stubGW struct{}
 
-func (stubGW) Name() string { return "stub" }
+func (stubGW) Name() string               { return "stub" }
 func (stubGW) Ping(context.Context) error { return nil }
 func (stubGW) GenerateDynamicQRIS(context.Context, domain.DynamicQRISRequest) (*domain.DynamicQRISResponse, error) {
 	return nil, nil

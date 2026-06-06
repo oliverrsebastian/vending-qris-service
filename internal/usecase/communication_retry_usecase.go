@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"payment-service/internal/domain"
+	"vending-qris-service/internal/domain"
 )
 
 // communicationRetryUsecase re-queries the payment gateway for rows whose response_status is still retryable.

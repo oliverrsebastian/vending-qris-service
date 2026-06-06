@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"payment-service/internal/domain"
+	"vending-qris-service/internal/domain"
 
 	"gorm.io/gorm"
 )

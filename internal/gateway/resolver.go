@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"payment-service/internal/domain"
+	"vending-qris-service/internal/domain"
 )
 
 // Resolver picks the first gateway in the priority list that constructs and Ping succeeds.

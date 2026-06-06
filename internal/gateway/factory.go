@@ -3,8 +3,8 @@ package gateway
 import (
 	"fmt"
 
-	"payment-service/internal/domain"
-	"payment-service/internal/gateway/stub"
+	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/gateway/stub"
 )
 
 // New returns the payment gateway implementation selected by name (env PAYMENT_GATEWAY).

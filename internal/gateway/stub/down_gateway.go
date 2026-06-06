@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"payment-service/internal/domain"
+	"vending-qris-service/internal/domain"
 )
 
 // DownGateway always fails Ping so it is skipped when higher-priority gateways are healthy.

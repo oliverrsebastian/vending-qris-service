@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"payment-service/internal/usecase"
+	"vending-qris-service/internal/usecase"
 )
 
 // RunPaymentCommunicationPoll ticks on interval and asks CommunicationRetry to poll the gateway for retryable rows.
