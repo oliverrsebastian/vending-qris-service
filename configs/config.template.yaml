@@ -1,0 +1,33 @@
+# Template: copy to config.dev.yaml / config.prod.yaml or use as documentation.
+# Keys match the koanf struct tags in internal/config/config.go.
+#
+# Which file loads: set APP_ENV=dev | prod | production (production → config.prod.yaml).
+# Override directory with CONFIG_DIR (default: configs next to the process working directory).
+#
+# Environment overrides (after YAML):
+#   APP_HTTP_PORT, APP_DATABASE_URL, APP_PAYMENT_GATEWAY — prefixed keys merged into the same fields
+#   PORT, DATABASE_URL, PAYMENT_GATEWAY — applied last (common for Docker / 12-factor)
+
+http_port: "8080"
+
+# PostgreSQL connection string (required unless supplied via DATABASE_URL / APP_DATABASE_URL)
+database_url: "postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=disable"
+
+# Payment provider id (registered in internal/gateway factory), e.g. stub
+payment_gateway: "stub"
+
+# Ordered gateway ids for new payments (first healthy by Ping wins). If omitted, [payment_gateway] is used on first DB init only.
+payment_gateway_priority:
+  - stub
+  - stub_fallback
+
+# Optional: periodically re-query the gateway for communications stuck in retryable response_status values.
+payment_communication_retry:
+  enabled: false
+  interval_seconds: 10
+  retryable_response_statuses:
+    - pending
+    - "429"
+    - "503"
+  max_poll_attempts: 30
+  batch_limit: 100

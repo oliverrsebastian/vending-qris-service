@@ -1,0 +1,6 @@
+# Production — loaded when APP_ENV=prod or APP_ENV=production
+# Prefer secrets via DATABASE_URL (or APP_DATABASE_URL) rather than committing them here.
+
+http_port: "8080"
+database_url: ""
+payment_gateway: "stub"
