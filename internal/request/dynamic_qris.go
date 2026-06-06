@@ -8,6 +8,7 @@ type DynamicQRISRequest struct {
 	Products      []ProductDetail `json:"products"`
 	Description   string          `json:"description"`
 	InvoiceNumber string          `json:"invoice_number,omitempty"`
+	TotalAmount   decimal.Decimal `json:"total_amount"`
 }
 
 type ProductDetail struct {

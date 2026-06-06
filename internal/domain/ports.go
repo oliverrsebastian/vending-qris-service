@@ -29,6 +29,11 @@ type CommunicationRepository interface {
 	) error
 }
 
+// TransactionRepository -  persists all transactions that are requested.
+type TransactionRepository interface {
+	Save(ctx context.Context, txn *Transaction) (*Transaction, error)
+}
+
 // GatewayPriorityRepository manages persisted gateway preference order.
 type GatewayPriorityRepository interface {
 	ListOrdered(ctx context.Context) ([]string, error)

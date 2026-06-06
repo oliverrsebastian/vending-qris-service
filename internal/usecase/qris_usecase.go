@@ -12,31 +12,47 @@ import (
 	"vending-qris-service/utilities"
 
 	"vending-qris-service/internal/domain"
+
+	"github.com/shopspring/decimal"
 )
 
 type qrisUsecase struct {
-	resolve domain.PaymentGatewayResolver
-	saver   domain.CommunicationRepository
+	resolve       domain.PaymentGatewayResolver
+	saver         domain.CommunicationRepository
+	txnRepository domain.TransactionRepository
 }
 
-func NewQRISUsecase(resolve domain.PaymentGatewayResolver, saver domain.CommunicationRepository) QRIS {
-	return &qrisUsecase{resolve: resolve, saver: saver}
+func NewQRISUsecase(
+	resolve domain.PaymentGatewayResolver,
+	saver domain.CommunicationRepository,
+	txnRepository domain.TransactionRepository,
+) QRIS {
+	return &qrisUsecase{resolve: resolve, saver: saver, txnRepository: txnRepository}
 }
 
 const opGenerateDynamicQRIS = "generate_dynamic_qris"
 
 func (u *qrisUsecase) GenerateDynamicQRIS(ctx context.Context, req request.DynamicQRISRequest) (*response.DynamicQRISResponse, error) {
-	reqBytes, err := json.Marshal(req)
-	if err != nil {
-		return nil, err
+	products := make([]domain.Product, 0)
+	totalAmount := decimal.Zero
+	for _, product := range req.Products {
+		products = append(products, domain.Product{
+			Name:      product.Name,
+			Quantity:  product.Quantity,
+			ItemPrice: product.ItemPrice,
+		})
+
+		totalAmount = totalAmount.Add(product.ItemPrice.Mul(decimal.NewFromInt(int64(product.Quantity))))
 	}
 
-	comm, err := u.saver.Save(ctx, &domain.PaymentGatewayCommunication{
-		Operation:        opGenerateDynamicQRIS,
-		RequestJSON:      reqBytes,
-		RequestTimestamp: time.Now(),
+	txn, err := u.txnRepository.Save(ctx, &domain.Transaction{
+		Products: products,
+		Status:   "PENDING",
+		Amount:   totalAmount,
 	})
 	if err != nil {
+		logger.Error("error creating transaction for req: %+v, cause: %v", req, err)
+
 		return nil, err
 	}
 
@@ -45,10 +61,36 @@ func (u *qrisUsecase) GenerateDynamicQRIS(ctx context.Context, req request.Dynam
 		return nil, err
 	}
 
+	req.TotalAmount = totalAmount
+
+	specificPayload, err := gw.CreatePayload(ctx, req)
+	if err != nil {
+		logger.Error("error creating gateway-specific payload for req: %+v, cause: %v", req, err)
+
+		return nil, err
+	}
+
+	payloadBytes, err := json.Marshal(specificPayload)
+	if err != nil {
+		logger.Error("error creating payload for req: %+v, cause: %v", req, err)
+
+		return nil, err
+	}
+
+	comm, err := u.saver.Save(ctx, &domain.PaymentGatewayCommunication{
+		TransactionID:    txn.ID,
+		Operation:        opGenerateDynamicQRIS,
+		RequestJSON:      string(payloadBytes),
+		RequestTimestamp: time.Now(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	var resp *response.DynamicQRISResponse
 
 	if err := utilities.Retry(3, 1*time.Second, func() error {
-		resp, err = gw.GenerateDynamicQRIS(ctx, req)
+		resp, err = gw.GenerateDynamicQRIS(ctx, string(payloadBytes))
 		if err != nil {
 			logger.Error("error when generate dynamic QRIS with req: %+v, cause: %v", req, err)
 
@@ -78,7 +120,7 @@ func (u *qrisUsecase) GenerateDynamicQRIS(ctx context.Context, req request.Dynam
 	}
 
 	comm.GatewayName = gw.Name()
-	comm.ResponseJSON = respBytes
+	comm.ResponseJSON = string(respBytes)
 	comm.ResponseTimestamp = time.Now()
 	comm.ResponseStatus = resp.StatusCode
 

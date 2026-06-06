@@ -12,7 +12,6 @@ import (
 	gwfactory "vending-qris-service/internal/gateway"
 	"vending-qris-service/internal/repository"
 	"vending-qris-service/internal/usecase"
-	"vending-qris-service/internal/worker"
 
 	"github.com/shopspring/decimal"
 )
@@ -62,31 +61,15 @@ func main() {
 	routingUC := usecase.NewGatewayRoutingUsecase(priorityRepo, resolver)
 
 	commRepo := repository.NewCommunicationRepository(db)
-	qrisUC := usecase.NewQRISUsecase(resolver, commRepo)
+	txnRepo := repository.NewTransactionRepository(db)
 
-	retryPolicy := usecase.RetryPolicy{
-		Enabled:                   cfg.PaymentCommunicationRetry.Enabled,
-		IntervalSeconds:           cfg.PaymentCommunicationRetry.IntervalSeconds,
-		RetryableResponseStatuses: cfg.PaymentCommunicationRetry.RetryableResponseStatuses,
-		MaxPollAttempts:           cfg.PaymentCommunicationRetry.MaxPollAttempts,
-		BatchLimit:                cfg.PaymentCommunicationRetry.BatchLimit,
-	}
-	retryUC := usecase.NewCommunicationRetryUsecase(gwfactory.New, commRepo, retryPolicy)
+	qrisUC := usecase.NewQRISUsecase(resolver, commRepo, txnRepo)
 
 	srv := controller.NewHTTPServer(controller.Deps{
 		Health:  database.NewHealth(db),
 		QRIS:    qrisUC,
-		Retry:   retryUC,
 		Routing: routingUC,
 	})
-
-	if cfg.PaymentCommunicationRetry.Enabled {
-		interval := cfg.PaymentCommunicationRetry.IntervalSeconds
-
-		logger.Info("payment communication retry poller enabled (every %vs)", interval)
-
-		go worker.RunPaymentCommunicationPoll(ctx, retryPolicy, retryUC)
-	}
 
 	addr := ":" + cfg.HTTPPort
 	logger.Info("listening on %v", addr)

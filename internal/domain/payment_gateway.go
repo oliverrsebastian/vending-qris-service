@@ -12,5 +12,6 @@ type PaymentGateway interface {
 	Name() string
 	// Ping is a cheap liveness check (TCP/HTTP health to provider, etc.). Return nil if this instance may serve traffic.
 	Ping(ctx context.Context) error
-	GenerateDynamicQRIS(ctx context.Context, req request.DynamicQRISRequest) (*response.DynamicQRISResponse, error)
+	GenerateDynamicQRIS(ctx context.Context, req string) (*response.DynamicQRISResponse, error)
+	CreatePayload(ctx context.Context, req request.DynamicQRISRequest) (any, error)
 }

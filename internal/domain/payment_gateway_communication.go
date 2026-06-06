@@ -8,9 +8,9 @@ type PaymentGatewayCommunication struct {
 	TransactionID     int64     `gorm:"not null"`
 	GatewayName       string    `gorm:"size:255;index;not null"`
 	Operation         string    `gorm:"size:255;index;not null"` // e.g. generate_dynamic_qris
-	RequestJSON       []byte    `gorm:"type:jsonb;not null"`
+	RequestJSON       string    `gorm:"type:jsonb;not null"`
 	RequestTimestamp  time.Time `gorm:"not null"`
-	ResponseJSON      []byte    `gorm:"type:jsonb"`
+	ResponseJSON      string    `gorm:"type:jsonb"`
 	ResponseStatus    int       `gorm:"index;not null"`
 	ResponseTimestamp time.Time `gorm:"not null"`
 	PollAttempts      int       `gorm:"not null;default:0"`
