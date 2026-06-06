@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
+	"vending-qris-service/internal/logger"
 
 	"vending-qris-service/internal/config"
 	"vending-qris-service/internal/controller"
@@ -13,9 +13,13 @@ import (
 	"vending-qris-service/internal/repository"
 	"vending-qris-service/internal/usecase"
 	"vending-qris-service/internal/worker"
+
+	"github.com/shopspring/decimal"
 )
 
 func main() {
+	decimal.MarshalJSONWithoutQuotes = true
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -24,13 +28,22 @@ func main() {
 		log.Fatal(err)
 	}
 
+	sync, err := logger.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer sync()
+
 	db, err := database.Open(cfg.Database)
 	if err != nil {
 		log.Fatalf("db: %v", err)
 	}
 
 	if err := database.RunMigrations(db); err != nil {
-		log.Fatalf("migrate: %v", err)
+		logger.Error("db migration failed: %v", err)
+
+		return
 	}
 
 	bootstrap := cfg.PaymentGatewayPriority
@@ -38,8 +51,10 @@ func main() {
 		bootstrap = []string{cfg.PaymentGateway}
 	}
 
-	if err := database.SeedGatewayPriorities(ctx, db, bootstrap); err != nil {
-		log.Fatalf("gateway priority seed: %v", err)
+	if err := database.SeedGatewayPrioritiesIfNotExist(ctx, db, bootstrap); err != nil {
+		logger.Error("gateway priority seed: %v", err)
+
+		return
 	}
 
 	priorityRepo := repository.NewGatewayPriorityRepository(db)
@@ -67,13 +82,16 @@ func main() {
 
 	if cfg.PaymentCommunicationRetry.Enabled {
 		interval := cfg.PaymentCommunicationRetry.IntervalSeconds
-		log.Printf("payment communication retry poller enabled (every %ds)", interval)
+
+		logger.Info("payment communication retry poller enabled (every %vs)", interval)
+
 		go worker.RunPaymentCommunicationPoll(ctx, retryPolicy, retryUC)
 	}
 
 	addr := ":" + cfg.HTTPPort
-	log.Printf("listening on %s", addr)
+	logger.Info("listening on %v", addr)
+
 	if err := http.ListenAndServe(addr, srv.Handler()); err != nil {
-		log.Fatal(fmt.Errorf("http: %w", err))
+		logger.Error("http error: %w", err)
 	}
 }

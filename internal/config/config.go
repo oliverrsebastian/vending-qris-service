@@ -89,7 +89,7 @@ func Load() (Config, error) {
 		cfg.HTTPPort = "8080"
 	}
 
-	if cfg.Database.Dsn == "" {
+	if cfg.Database.URL == "" {
 		return Config{}, fmt.Errorf("database_url is required (configs YAML or DATABASE_URL / APP_DATABASE_URL)")
 	}
 

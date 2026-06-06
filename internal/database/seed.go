@@ -9,18 +9,21 @@ import (
 	"gorm.io/gorm"
 )
 
-// SeedGatewayPriorities inserts the default gateway priority list when the table is empty.
-func SeedGatewayPriorities(ctx context.Context, db *gorm.DB, bootstrap []string) error {
+// SeedGatewayPrioritiesIfNotExist inserts the default gateway priority list when the table is empty.
+func SeedGatewayPrioritiesIfNotExist(ctx context.Context, db *gorm.DB, bootstrap []string) error {
 	var count int64
 	if err := db.WithContext(ctx).Model(&domain.GatewayPriority{}).Count(&count).Error; err != nil {
 		return err
 	}
+
 	if count > 0 {
 		return nil
 	}
+
 	if len(bootstrap) == 0 {
 		return fmt.Errorf("cannot seed gateway_priorities: empty bootstrap")
 	}
+
 	return seedGatewayPriorities(ctx, db, bootstrap)
 }
 

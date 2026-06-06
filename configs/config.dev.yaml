@@ -1,7 +1,9 @@
 # Local / development — loaded when APP_ENV is unset or APP_ENV=dev
 
 http_port: "8080"
-database_url: "postgres://postgres:postgres@localhost:5432/payment_dev?sslmode=disable"
+database:
+  url: "postgres://postgres:postgres@localhost:5432/payment_dev?sslmode=disable"
+
 payment_gateway: "stub"
 payment_gateway_priority:
   - stub
