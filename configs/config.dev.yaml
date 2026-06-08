@@ -20,3 +20,6 @@ payment_communication_retry:
     - "503"
   max_poll_attempts: 30
   batch_limit: 50
+
+# Local dev only — override in prod via APP_AUTHENTICATION_KEY from your secret store.
+authentication_key: "dev-admin-key-change-me"

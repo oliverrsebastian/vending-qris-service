@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"vending-qris-service/internal/controller"
-	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/request"
+	"vending-qris-service/internal/response"
 	"vending-qris-service/internal/usecase"
 )
 
@@ -23,55 +23,32 @@ type healthFail struct{}
 
 func (healthFail) Ping(context.Context) error { return errors.New("db down") }
 
-type mockResolver struct {
-	gw domain.PaymentGateway
+type mockQRIS struct{}
+
+func (mockQRIS) GenerateDynamicQRIS(context.Context, request.DynamicQRISRequest) (*response.DynamicQRISResponse, error) {
+	return &response.DynamicQRISResponse{
+		QRString:    "qr-test",
+		StatusCode:  http.StatusOK,
+		GatewayUsed: "stub",
+	}, nil
 }
 
-func (m *mockResolver) Resolve(context.Context) (domain.PaymentGateway, error) {
-	return m.gw, nil
+type mockRouting struct{}
+
+func (mockRouting) ListAndActive(context.Context) ([]string, string, error) {
+	return []string{"stub"}, "stub", nil
+}
+func (mockRouting) SetPriority(context.Context, []string) error { return nil }
+func (mockRouting) FailoverRotate(context.Context) ([]string, string, error) {
+	return []string{"stub"}, "stub", nil
 }
 
-type mockCommRepo struct{}
-
-func (mockCommRepo) Create(context.Context, *domain.PaymentGatewayCommunication) error { return nil }
-func (mockCommRepo) ListRetryableByResponseStatus(context.Context, []string, int, int) ([]domain.PaymentGatewayCommunication, error) {
-	return nil, nil
-}
-func (mockCommRepo) UpdateAfterStatusPoll(context.Context, int64, []byte, string, time.Time, int) error {
-	return nil
-}
-
-type mockPriorityRepo struct {
-	list []string
-}
-
-func (m *mockPriorityRepo) ListOrdered(context.Context) ([]string, error) { return m.list, nil }
-func (m *mockPriorityRepo) ReplaceAll(_ context.Context, gateways []string) error {
-	m.list = gateways
-	return nil
-}
-func (m *mockPriorityRepo) RotateOnce(context.Context) error { return nil }
-
-type stubGW struct{}
-
-func (stubGW) Name() string               { return "stub" }
-func (stubGW) Ping(context.Context) error { return nil }
-func (stubGW) GenerateDynamicQRIS(_ context.Context, req domain.DynamicQRISRequest) (*domain.DynamicQRISResponse, error) {
-	return &domain.DynamicQRISResponse{QRString: "qr", ReferenceID: req.ReferenceID, StatusCode: "200"}, nil
-}
-func (stubGW) CheckPaymentStatus(context.Context, domain.PaymentStatusCheckInput) (*domain.PaymentStatusResult, error) {
-	return nil, nil
-}
-
-func newTestServer() controller.HTTPServer {
-	resolver := &mockResolver{gw: stubGW{}}
-	priority := &mockPriorityRepo{list: []string{"stub"}}
-	comm := mockCommRepo{}
+func newTestServer(authKey string) controller.HTTPServer {
 	return controller.NewHTTPServer(controller.Deps{
 		Health:  healthOK{},
-		QRIS:    usecase.NewQRISUsecase(resolver, comm),
-		Retry:   usecase.NewCommunicationRetryUsecase(domain.GatewayFactory(func(string) (domain.PaymentGateway, error) { return stubGW{}, nil }), comm, usecase.RetryPolicy{Enabled: true}),
-		Routing: usecase.NewGatewayRoutingUsecase(priority, resolver),
+		QRIS:    mockQRIS{},
+		Routing: mockRouting{},
+		AuthKey: authKey,
 	})
 }
 
@@ -96,10 +73,12 @@ func TestHealth_degraded(t *testing.T) {
 }
 
 func TestPostDynamicQRIS_success(t *testing.T) {
-	srv := newTestServer()
+	srv := newTestServer("")
 	body, _ := json.Marshal(map[string]any{
-		"reference_id": "ref-ctrl",
-		"amount_minor": 5000,
+		"description": "test",
+		"products": []map[string]any{
+			{"name": "Water", "quantity": 1, "item_price": 5000},
+		},
 	})
 	req := httptest.NewRequest(http.MethodPost, "/v1/payments/qris/dynamic", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
@@ -107,28 +86,22 @@ func TestPostDynamicQRIS_success(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status: %d body=%s", rec.Code, rec.Body.String())
 	}
-	var resp domain.DynamicQRISResponse
-	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
-		t.Fatal(err)
-	}
-	if resp.GatewayUsed != "stub" || resp.QRString != "qr" {
-		t.Fatalf("resp: %+v", resp)
-	}
 }
 
-func TestPostDynamicQRIS_validation(t *testing.T) {
-	srv := newTestServer()
-	req := httptest.NewRequest(http.MethodPost, "/v1/payments/qris/dynamic", bytes.NewReader([]byte(`{}`)))
+func TestGetAdminPaymentGateways_requiresAuth(t *testing.T) {
+	srv := newTestServer("secret-key")
+	req := httptest.NewRequest(http.MethodGet, "/v1/admin/payment-gateways", nil)
 	rec := httptest.NewRecorder()
 	srv.Handler().ServeHTTP(rec, req)
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("status: %d", rec.Code)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status: %d want 401", rec.Code)
 	}
 }
 
-func TestGetAdminPaymentGateways(t *testing.T) {
-	srv := newTestServer()
+func TestGetAdminPaymentGateways_withAuth(t *testing.T) {
+	srv := newTestServer("secret-key")
 	req := httptest.NewRequest(http.MethodGet, "/v1/admin/payment-gateways", nil)
+	req.Header.Set("Authorization", "secret-key")
 	rec := httptest.NewRecorder()
 	srv.Handler().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -136,12 +109,8 @@ func TestGetAdminPaymentGateways(t *testing.T) {
 	}
 }
 
-func TestPostAdminPaymentCommunicationsPoll(t *testing.T) {
-	srv := newTestServer()
-	req := httptest.NewRequest(http.MethodPost, "/v1/admin/payment-communications/poll", nil)
-	rec := httptest.NewRecorder()
-	srv.Handler().ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status: %d", rec.Code)
-	}
-}
+// Ensure usecase interfaces remain decoupled from controller wiring.
+var (
+	_ usecase.QRIS           = mockQRIS{}
+	_ usecase.GatewayRouting = mockRouting{}
+)

@@ -35,12 +35,9 @@ func Authenticate(authKey string) func(http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			auth := r.Header.Get("Authorization")
-			if auth == "" {
+			if auth == "" || auth != authKey {
 				w.WriteHeader(http.StatusUnauthorized)
-			}
-
-			if auth != authKey {
-				w.WriteHeader(http.StatusUnauthorized)
+				return
 			}
 
 			next.ServeHTTP(w, r.WithContext(ctx))

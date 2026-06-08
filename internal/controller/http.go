@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"vending-qris-service/internal/logger"
 
-	"vending-qris-service/internal/domain"
+	"vending-qris-service/internal/request"
 	"vending-qris-service/internal/usecase"
 
 	"github.com/go-chi/chi/v5"
@@ -76,7 +76,7 @@ func (h HTTPServer) healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h HTTPServer) postDynamicQRIS(r *http.Request) (Response, error) {
-	var req domain.DynamicQRISRequest
+	var req request.DynamicQRISRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return Response{Code: http.StatusBadRequest}, err
 	}

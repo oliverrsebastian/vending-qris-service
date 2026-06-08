@@ -29,9 +29,15 @@ type CommunicationRepository interface {
 	) error
 }
 
-// TransactionRepository -  persists all transactions that are requested.
+// TransactionRepository persists all transactions that are requested.
 type TransactionRepository interface {
 	Save(ctx context.Context, txn *Transaction) (*Transaction, error)
+}
+
+// Transactor runs a callback inside a single database transaction.
+// Orchestration lives in use cases; repositories participate via context-bound connections.
+type Transactor interface {
+	WithinTransaction(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
 // GatewayPriorityRepository manages persisted gateway preference order.

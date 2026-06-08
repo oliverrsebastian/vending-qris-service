@@ -63,7 +63,8 @@ func main() {
 	commRepo := repository.NewCommunicationRepository(db)
 	txnRepo := repository.NewTransactionRepository(db)
 
-	qrisUC := usecase.NewQRISUsecase(resolver, commRepo, txnRepo)
+	transactor := database.NewTransactor(db)
+	qrisUC := usecase.NewQRISUsecase(resolver, commRepo, txnRepo, transactor)
 
 	srv := controller.NewHTTPServer(controller.Deps{
 		Health:  database.NewHealth(db),
@@ -76,6 +77,6 @@ func main() {
 	logger.Info("listening on %v", addr)
 
 	if err := http.ListenAndServe(addr, srv.Handler()); err != nil {
-		logger.Error("http error: %w", err)
+		logger.Error("http error: %v", err)
 	}
 }

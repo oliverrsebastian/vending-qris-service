@@ -7,6 +7,7 @@
 # Environment overrides (after YAML):
 #   APP_HTTP_PORT, APP_DATABASE_URL, APP_PAYMENT_GATEWAY — prefixed keys merged into the same fields
 #   PORT, DATABASE_URL, PAYMENT_GATEWAY — applied last (common for Docker / 12-factor)
+#   APP_AUTHENTICATION_KEY — admin API Authorization header value (inject via CI/CD secret store)
 
 http_port: "8080"
 
@@ -21,6 +22,10 @@ payment_gateway: "stub"
 payment_gateway_priority:
   - stub
   - stub_fallback
+
+# Admin endpoints require Authorization header to match this value exactly.
+# Leave empty in committed configs; set via APP_AUTHENTICATION_KEY in deployment.
+authentication_key: ""
 
 # Optional: periodically re-query the gateway for communications stuck in retryable response_status values.
 payment_communication_retry:

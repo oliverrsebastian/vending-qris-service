@@ -18,7 +18,7 @@ func NewCommunicationRepository(db *gorm.DB) *CommunicationRepository {
 }
 
 func (r *CommunicationRepository) Save(ctx context.Context, paymentGatewayCommunication *domain.PaymentGatewayCommunication) (*domain.PaymentGatewayCommunication, error) {
-	if err := r.db.WithContext(ctx).Save(paymentGatewayCommunication).Error; err != nil {
+	if err := DBFromContext(ctx, r.db).Save(paymentGatewayCommunication).Error; err != nil {
 		return nil, err
 	}
 
@@ -51,7 +51,7 @@ func (r *CommunicationRepository) UpdateAfterStatusPoll(
 	responseTimestamp time.Time,
 	pollAttempts int,
 ) error {
-	return r.db.WithContext(ctx).Model(&domain.PaymentGatewayCommunication{}).
+	return DBFromContext(ctx, r.db).Model(&domain.PaymentGatewayCommunication{}).
 		Where("id = ?", id).
 		Updates(map[string]any{
 			"response_json":      responseJSON,
