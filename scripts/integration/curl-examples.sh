@@ -6,7 +6,7 @@
 #   export PAYMENT_SERVICE_AUTH_KEY=your-admin-key
 #   bash scripts/integration/curl-examples.sh [command]
 #
-# Commands: all | health | qris | gateways | priority | failover | poll
+# Commands: all | health | qris | callback-stub | gateways | priority | failover | poll
 
 set -euo pipefail
 
@@ -20,6 +20,20 @@ curl_health() {
   curl -sS -w "\nHTTP %{http_code}\n" \
     -H "Accept: application/json" \
     "${BASE_URL}/health"
+  echo
+}
+
+curl_callback_stub() {
+  echo "== POST /v1/callbacks/stub (public webhook) =="
+  curl -sS -w "\nHTTP %{http_code}\n" \
+    -X POST "${BASE_URL}/v1/callbacks/stub" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/json" \
+    -d '{
+      "transaction_id": 1,
+      "status": "PAID",
+      "reference_id": "stub-ref-001"
+    }'
   echo
 }
 
@@ -100,6 +114,7 @@ require_auth() {
 case "${cmd}" in
   health) curl_health ;;
   qris) curl_generate_qris ;;
+  callback-stub) curl_callback_stub ;;
   gateways) require_auth; curl_list_gateways ;;
   priority) require_auth; curl_set_priority ;;
   failover) require_auth; curl_failover ;;
@@ -107,6 +122,7 @@ case "${cmd}" in
   all)
     curl_health
     curl_generate_qris
+    curl_callback_stub
     require_auth
     curl_list_gateways
     curl_set_priority
@@ -115,7 +131,7 @@ case "${cmd}" in
     ;;
   *)
     echo "unknown command: ${cmd}" >&2
-    echo "usage: $0 [all|health|qris|gateways|priority|failover|poll]" >&2
+    echo "usage: $0 [all|health|qris|callback-stub|gateways|priority|failover|poll]" >&2
     exit 1
     ;;
 esac

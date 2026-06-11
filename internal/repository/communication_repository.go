@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"vending-qris-service/internal/domain"
@@ -23,6 +24,46 @@ func (r *CommunicationRepository) Save(ctx context.Context, paymentGatewayCommun
 	}
 
 	return paymentGatewayCommunication, nil
+}
+
+func (r *CommunicationRepository) FindLatestByTransactionAndOperation(
+	ctx context.Context,
+	transactionID int64,
+	operation string,
+) (*domain.PaymentGatewayCommunication, error) {
+	var comm domain.PaymentGatewayCommunication
+	err := DBFromContext(ctx, r.db).
+		Where("transaction_id = ? AND operation = ?", transactionID, operation).
+		Order("id DESC").
+		First(&comm).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &comm, nil
+}
+
+func (r *CommunicationRepository) UpdateGatewayResponse(
+	ctx context.Context,
+	id int64,
+	gatewayName string,
+	responseJSON string,
+	responseStatus int,
+	responseTimestamp time.Time,
+) error {
+	updates := map[string]any{
+		"response_json":      responseJSON,
+		"response_status":    responseStatus,
+		"response_timestamp": responseTimestamp,
+	}
+	if gatewayName != "" {
+		updates["gateway_name"] = gatewayName
+	}
+	return DBFromContext(ctx, r.db).Model(&domain.PaymentGatewayCommunication{}).
+		Where("id = ?", id).
+		Updates(updates).Error
 }
 
 func (r *CommunicationRepository) ListRetryableByResponseStatus(

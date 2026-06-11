@@ -16,3 +16,7 @@ type ProductDetail struct {
 	Quantity  int             `json:"quantity"`
 	ItemPrice decimal.Decimal `json:"item_price"`
 }
+
+type CancelQRIS struct {
+	ReferenceID string `json:"reference_id"`
+}

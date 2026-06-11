@@ -13,3 +13,15 @@ type DynamicQRISResponse struct {
 	// GatewayUsed is the provider id chosen for this call (from priority + availability).
 	GatewayUsed string `json:"gateway_used,omitempty"`
 }
+
+type CheckPaymentResponse struct {
+	IsPaid bool `json:"is_paid"`
+}
+
+type CancelPaymentResponse struct {
+	Status string `json:"status"`
+}
+
+func (r CancelPaymentResponse) IsSuccess() bool {
+	return r.Status == "SUCCESS"
+}

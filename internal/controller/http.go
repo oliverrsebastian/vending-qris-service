@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"vending-qris-service/internal/logger"
 
-	"vending-qris-service/internal/request"
 	"vending-qris-service/internal/usecase"
 
 	"github.com/go-chi/chi/v5"
@@ -15,29 +14,32 @@ import (
 
 // Deps bundles HTTP dependencies (keeps constructor readable as the surface grows).
 type Deps struct {
-	Health  HealthChecker
-	QRIS    usecase.QRIS
-	Retry   usecase.CommunicationRetry
-	Routing usecase.GatewayRouting
-	AuthKey string
+	Health   HealthChecker
+	QRIS     usecase.QRIS
+	Retry    usecase.CommunicationRetry
+	Routing  usecase.GatewayRouting
+	Callback usecase.PaymentCallback
+	AuthKey  string
 }
 
 type HTTPServer struct {
-	health  HealthChecker
-	qris    usecase.QRIS
-	retry   usecase.CommunicationRetry
-	routing usecase.GatewayRouting
-	mux     chi.Router
-	authKey string
+	health   HealthChecker
+	qris     usecase.QRIS
+	retry    usecase.CommunicationRetry
+	routing  usecase.GatewayRouting
+	callback usecase.PaymentCallback
+	mux      chi.Router
+	authKey  string
 }
 
 func NewHTTPServer(d Deps) HTTPServer {
 	h := HTTPServer{
-		health:  d.Health,
-		qris:    d.QRIS,
-		retry:   d.Retry,
-		routing: d.Routing,
-		authKey: d.AuthKey,
+		health:   d.Health,
+		qris:     d.QRIS,
+		retry:    d.Retry,
+		routing:  d.Routing,
+		callback: d.Callback,
+		authKey:  d.AuthKey,
 	}
 
 	r := chi.NewRouter()
@@ -50,8 +52,12 @@ func NewHTTPServer(d Deps) HTTPServer {
 	}))
 
 	r.Get("/health", h.healthHandler)
-	r.Post("/v1/payments/qris/dynamic", Handle(h.postDynamicQRIS))
 
+	r.Post("/v1/payments/qris/dynamic", Handle(h.postDynamicQRIS))
+	r.Post("/v1/payments/check/{transaction_id}", Handle(h.checkPaymentResult))
+	r.Post("/v1/payments/cancel/{transaction_id}", Handle(h.cancelPaymentByTransactionID))
+
+	h.registerCallbackRoutes(r)
 	h.registerAdminRoutes(r)
 
 	h.mux = r
@@ -73,18 +79,4 @@ func (h HTTPServer) healthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(body)
-}
-
-func (h HTTPServer) postDynamicQRIS(r *http.Request) (Response, error) {
-	var req request.DynamicQRISRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return Response{Code: http.StatusBadRequest}, err
-	}
-
-	resp, err := h.qris.GenerateDynamicQRIS(r.Context(), req)
-	if err != nil {
-		return Response{Code: http.StatusInternalServerError}, err
-	}
-
-	return Response{Code: http.StatusOK, Data: resp}, nil
 }

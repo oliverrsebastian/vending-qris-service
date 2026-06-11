@@ -23,6 +23,12 @@ func (DownGateway) GenerateDynamicQRIS(ctx context.Context, req string) (*respon
 	return nil, errors.New("stub_down: unavailable")
 }
 
+func (DownGateway) CheckPaymentStatus(ctx context.Context, req string) (*response.PaymentStatusResponse, error) {
+	_ = ctx
+	_ = req
+	return nil, errors.New("stub_down: unavailable")
+}
+
 func (DownGateway) CreatePayload(ctx context.Context, req request.DynamicQRISRequest) (any, error) {
 	return nil, nil
 }

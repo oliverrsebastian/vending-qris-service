@@ -65,12 +65,14 @@ func main() {
 
 	transactor := database.NewTransactor(db)
 	qrisUC := usecase.NewQRISUsecase(resolver, commRepo, txnRepo, transactor)
+	callbackUC := usecase.NewPaymentCallbackUsecase(txnRepo, commRepo, transactor)
 
 	srv := controller.NewHTTPServer(controller.Deps{
-		Health:  database.NewHealth(db),
-		QRIS:    qrisUC,
-		Routing: routingUC,
-		AuthKey: cfg.AuthenticationKey,
+		Health:   database.NewHealth(db),
+		QRIS:     qrisUC,
+		Routing:  routingUC,
+		Callback: callbackUC,
+		AuthKey:  cfg.AuthenticationKey,
 	})
 
 	addr := ":" + cfg.HTTPPort
